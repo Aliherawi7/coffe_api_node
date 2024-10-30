@@ -38,10 +38,22 @@ const corsOptions = {
 };
 
 // Middleware setup
-app.use(cors(corsOptions)); // Enable CORS with options
+// app.use(cors(corsOptions)); // Enable CORS with options
 app.use(morgan("dev")); // Log requests to the console
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(express.json()); // Parse JSON bodies
+
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
+
 
 // Use routes
 app.use("/user", userRoute);
