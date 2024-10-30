@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Madadi Cafe Order Report</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      .order-details {
+        margin: 20px 0;
+      }
+      .customer-info {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #fff;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        padding: 12px;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+      th {
+        background-color: red;
+        color: white;
+      }
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+      .total {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin-top: 20px;
+        text-align: right;
+      }
+      footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 0.9em;
+        color: #777;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Madadi Cafe Order Report 🍵</h1>
+    <section class="order-details">
+      <div class="customer-info">
+        <h3>Customer Details</h3>
+        <p>Name: <%= name %></p>
+        <p>Email: <%= email %></p>
+        <p>Contact Number: <%= contactNumber %></p>
+        <p>Payment Method: <%= paymentMethod %></p>
+      </div>
+
+      <h3>Product Details</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Total (AFN)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% productDetails.forEach(function(product) { %>
+          <tr>
+            <td><%= product.name %></td>
+            <td><%= product.quantity %></td>
+            <td>AFN <%= product.total %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </section>
+
+    <h3 class="total">Total Amount: AFN <%= totalAmount %></h3>
+    <h3>Thank you for visiting Madadi Cafe!</h3>
+
+    <footer>
+      &copy; <%= new Date().getFullYear() %> Madadi Cafe. All rights reserved.
+    </footer>
+  </body>
+</html>
