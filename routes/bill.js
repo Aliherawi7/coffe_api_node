@@ -1,5 +1,6 @@
-// const express = require("express");
-// const pool = require("../connection");
+
+
+// // module.exports = router;const express = require("express");
 // const router = express.Router();
 // const ejs = require("ejs");
 // const pdf = require("html-pdf");
@@ -8,6 +9,10 @@
 // const uuid = require("uuid");
 // const auth = require("../services/authentication");
 
+// // Create a new SQLite database in memory
+// const db = require("../connection");
+
+
 // // Route to generate PDF
 // router.post("/generateReport", auth.authenticateToken, async (req, res) => {
 //   const generatedUuid = uuid.v1();
@@ -15,20 +20,18 @@
 
 //   console.log("Received order details:", orderDetails);
 
-//   // Check for product details
 //   if (!orderDetails.productDetails) {
 //     return res.status(400).json({ message: "Product details are required." });
 //   }
 
 //   let productDetailsReport;
-//   let total = 0; // Initialize total
+//   let total = 0;
 
-//   // Parse product details and calculate total
 //   try {
 //     productDetailsReport = JSON.parse(orderDetails.productDetails).map(
 //       (product) => {
 //         const productTotal = (product.price * product.quantity).toFixed(2);
-//         total += parseFloat(productTotal); // Accumulate total
+//         total += parseFloat(productTotal);
 //         return {
 //           ...product,
 //           total: productTotal,
@@ -40,51 +43,57 @@
 //   }
 
 //   const query = `
-//         INSERT INTO bill (name, uuid, email, contactNumber, paymentMethod, total, productDetails, createdBy)
+//         INSERT INTO bill (name, uuid, email, contactNumber, paymentMethod, total, productDetails, createdBy) 
 //         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
 //   try {
+//     const createdByEmail = res.locals.email;
+
 //     // Insert into database
-//     const [result] = await pool.query(query, [
+//     db.run(query, [
 //       orderDetails.name,
 //       generatedUuid,
 //       orderDetails.email,
 //       orderDetails.contactNumber,
 //       orderDetails.paymentMethod,
-//       total.toFixed(2), // Pass the calculated total
+//       total.toFixed(2),
 //       JSON.stringify(productDetailsReport),
-//       res.locals.email,
-//     ]);
-
-//     // Render PDF
-//     ejs.renderFile(
-//       path.join(__dirname, "report.ejs"),
-//       {
-//         productDetails: productDetailsReport,
-//         name: orderDetails.name,
-//         email: orderDetails.email,
-//         contactNumber: orderDetails.contactNumber,
-//         paymentMethod: orderDetails.paymentMethod,
-//         totalAmount: total.toFixed(2), // Pass the calculated total
-//       },
-//       (err, results) => {
-//         if (err) {
-//           console.error("Error rendering EJS:", err);
-//           return res.status(500).json(err);
-//         } else {
-//           pdf
-//             .create(results)
-//             .toFile(`./generated_pdf/${generatedUuid}.pdf`, (err, data) => {
-//               if (err) {
-//                 console.error("Error creating PDF:", err);
-//                 return res.status(500).json(err);
-//               } else {
-//                 return res.status(200).json({ uuid: generatedUuid });
-//               }
-//             });
-//         }
+//       createdByEmail,
+//     ], function (err) {
+//       if (err) {
+//         console.error("SQL Error:", err);
+//         return res.status(500).json(err);
 //       }
-//     );
+
+//       ejs.renderFile(
+//         path.join(__dirname, "report.ejs"),
+//         {
+//           productDetails: productDetailsReport,
+//           name: orderDetails.name,
+//           email: orderDetails.email,
+//           contactNumber: orderDetails.contactNumber,
+//           paymentMethod: orderDetails.paymentMethod,
+//           totalAmount: total.toFixed(2),
+//         },
+//         (err, results) => {
+//           if (err) {
+//             console.error("Error rendering EJS:", err);
+//             return res.status(500).json(err);
+//           } else {
+//             pdf
+//               .create(results)
+//               .toFile(`./generated_pdf/${generatedUuid}.pdf`, (err, data) => {
+//                 if (err) {
+//                   console.error("Error creating PDF:", err);
+//                   return res.status(500).json(err);
+//                 } else {
+//                   return res.status(200).json({ uuid: generatedUuid });
+//                 }
+//               });
+//           }
+//         }
+//       );
+//     });
 //   } catch (err) {
 //     console.error("SQL Error:", err);
 //     return res.status(500).json(err);
@@ -108,6 +117,10 @@
 //       })
 //     );
 
+//     const total = productDetailsReport
+//       .reduce((acc, product) => acc + parseFloat(product.total), 0)
+//       .toFixed(2);
+
 //     ejs.renderFile(
 //       path.join(__dirname, "report.ejs"),
 //       {
@@ -116,7 +129,7 @@
 //         email: orderDetails.email,
 //         contactNumber: orderDetails.contactNumber,
 //         paymentMethod: orderDetails.paymentMethod,
-//         totalAmount: total.toFixed(2), // You should also calculate total for this case
+//         totalAmount: total,
 //       },
 //       (err, results) => {
 //         if (err) {
@@ -142,13 +155,13 @@
 // router.get("/getBills", auth.authenticateToken, async (req, res) => {
 //   const query = "SELECT * FROM bill ORDER BY id DESC";
 
-//   try {
-//     const [results] = await pool.query(query); // Use pool.query here
-//     return res.status(200).json(results);
-//   } catch (err) {
-//     console.error("Database query error:", err);
-//     return res.status(500).json(err);
-//   }
+//   db.all(query, [], (err, rows) => {
+//     if (err) {
+//       console.error("Database query error:", err);
+//       return res.status(500).json(err);
+//     }
+//     return res.status(200).json(rows);
+//   });
 // });
 
 // // Route to delete a bill
@@ -156,20 +169,19 @@
 //   const id = req.params.id;
 //   const query = "DELETE FROM bill WHERE id = ?";
 
-//   try {
-//     const [results] = await pool.query(query, [id]); // Use pool.query here
-//     if (results.affectedRows === 0) {
+//   db.run(query, [id], function (err) {
+//     if (err) {
+//       console.error("Database deletion error:", err);
+//       return res.status(500).json(err);
+//     }
+//     if (this.changes === 0) {
 //       return res.status(404).json({ message: "Bill ID not found!" });
 //     }
 //     return res.status(200).json({ message: "Bill deleted successfully!" });
-//   } catch (err) {
-//     console.error("Database deletion error:", err);
-//     return res.status(500).json(err);
-//   }
+//   });
 // });
 
 // module.exports = router;
-
 const express = require("express");
 const router = express.Router();
 const ejs = require("ejs");
@@ -179,11 +191,10 @@ const fs = require("fs");
 const uuid = require("uuid");
 const auth = require("../services/authentication");
 
-// Create a new SQLite database in memory
+// Connect to SQLite database
 const db = require("../connection");
 
-
-// Route to generate PDF
+// Route to generate PDF and store order details
 router.post("/generateReport", auth.authenticateToken, async (req, res) => {
   const generatedUuid = uuid.v1();
   const orderDetails = req.body;
@@ -197,6 +208,7 @@ router.post("/generateReport", auth.authenticateToken, async (req, res) => {
   let productDetailsReport;
   let total = 0;
 
+  // Parse and calculate total from product details
   try {
     productDetailsReport = JSON.parse(orderDetails.productDetails).map(
       (product) => {
@@ -213,64 +225,69 @@ router.post("/generateReport", auth.authenticateToken, async (req, res) => {
   }
 
   const query = `
-        INSERT INTO bill (name, uuid, email, contactNumber, paymentMethod, total, productDetails, createdBy) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    INSERT INTO bill (name, uuid, email, contactNumber, paymentMethod, total, productDetails, createdBy) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
   try {
     const createdByEmail = res.locals.email;
 
-    // Insert into database
-    db.run(query, [
-      orderDetails.name,
-      generatedUuid,
-      orderDetails.email,
-      orderDetails.contactNumber,
-      orderDetails.paymentMethod,
-      total.toFixed(2),
-      JSON.stringify(productDetailsReport),
-      createdByEmail,
-    ], function (err) {
-      if (err) {
-        console.error("SQL Error:", err);
-        return res.status(500).json(err);
-      }
-
-      ejs.renderFile(
-        path.join(__dirname, "report.ejs"),
-        {
-          productDetails: productDetailsReport,
-          name: orderDetails.name,
-          email: orderDetails.email,
-          contactNumber: orderDetails.contactNumber,
-          paymentMethod: orderDetails.paymentMethod,
-          totalAmount: total.toFixed(2),
-        },
-        (err, results) => {
-          if (err) {
-            console.error("Error rendering EJS:", err);
-            return res.status(500).json(err);
-          } else {
-            pdf
-              .create(results)
-              .toFile(`./generated_pdf/${generatedUuid}.pdf`, (err, data) => {
-                if (err) {
-                  console.error("Error creating PDF:", err);
-                  return res.status(500).json(err);
-                } else {
-                  return res.status(200).json({ uuid: generatedUuid });
-                }
-              });
-          }
+    // Insert into SQLite database
+    db.run(
+      query,
+      [
+        orderDetails.name,
+        generatedUuid,
+        orderDetails.email,
+        orderDetails.contactNumber,
+        orderDetails.paymentMethod,
+        total.toFixed(2),
+        JSON.stringify(productDetailsReport),
+        createdByEmail,
+      ],
+      function (err) {
+        if (err) {
+          console.error("SQL Error:", err);
+          return res.status(500).json(err);
         }
-      );
-    });
+
+        // Render the PDF
+        ejs.renderFile(
+          path.join(__dirname, "report.ejs"),
+          {
+            productDetails: productDetailsReport,
+            name: orderDetails.name,
+            email: orderDetails.email,
+            contactNumber: orderDetails.contactNumber,
+            paymentMethod: orderDetails.paymentMethod,
+            totalAmount: total.toFixed(2),
+          },
+          (err, results) => {
+            if (err) {
+              console.error("Error rendering EJS:", err);
+              return res.status(500).json(err);
+            } else {
+              pdf
+                .create(results)
+                .toFile(`./generated_pdf/${generatedUuid}.pdf`, (err, data) => {
+                  if (err) {
+                    console.error("Error creating PDF:", err);
+                    return res.status(500).json(err);
+                  } else {
+                    return res.status(200).json({ uuid: generatedUuid });
+                  }
+                });
+            }
+          }
+        );
+      }
+    );
   } catch (err) {
     console.error("SQL Error:", err);
     return res.status(500).json(err);
   }
 });
 
-// Route to get PDF
+// Route to retrieve PDF by UUID
 router.post("/getPdf", auth.authenticateToken, async (req, res) => {
   console.log("Incoming request to generate PDF:", req.body);
   const orderDetails = req.body;
@@ -321,7 +338,7 @@ router.post("/getPdf", auth.authenticateToken, async (req, res) => {
   }
 });
 
-// Route to get all bills
+// Route to retrieve all bills
 router.get("/getBills", auth.authenticateToken, async (req, res) => {
   const query = "SELECT * FROM bill ORDER BY id DESC";
 
@@ -334,7 +351,7 @@ router.get("/getBills", auth.authenticateToken, async (req, res) => {
   });
 });
 
-// Route to delete a bill
+// Route to delete a bill by ID
 router.delete("/delete/:id", auth.authenticateToken, async (req, res) => {
   const id = req.params.id;
   const query = "DELETE FROM bill WHERE id = ?";
