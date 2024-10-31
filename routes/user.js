@@ -51,13 +51,13 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "Email already exists!" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // const hashedPassword = await bcrypt.hash(password, saltRounds);
     const insertQuery =
       "INSERT INTO user (name, contactNumber, email, password, status, role) VALUES (?, ?, ?, ?, 'false', 'user')";
 
     // Custom Promise for connection.run
     await new Promise((resolve, reject) => {
-      connection.run(insertQuery, [name, contactNumber, email, hashedPassword], (err) => {
+      connection.run(insertQuery, [name, contactNumber, email, password], (err) => {
         if (err) {
           console.error(err);
           return reject(err);
