@@ -34,7 +34,7 @@ router.post("/signup", async (req, res) => {
 
   try {
     const query = "SELECT email FROM user WHERE email=?";
-    const [results] = await connection.all(query, [email]); // Use connection.all for SQLite
+    const results = await connection.all(query, [email]); // No destructuring
 
     if (results.length > 0) {
       return res.status(400).json({ message: "Email already exists!" });
@@ -47,7 +47,7 @@ router.post("/signup", async (req, res) => {
       name,
       contactNumber,
       email,
-      password,
+      hashedPassword, // Use hashed password here
     ]);
     res.status(200).json({ message: "Successfully registered!" });
   } catch (err) {
@@ -55,6 +55,7 @@ router.post("/signup", async (req, res) => {
     res.status(500).json({ message: "Database query error", error: err });
   }
 });
+
 
 // Login route
 router.post("/login", async (req, res) => {
