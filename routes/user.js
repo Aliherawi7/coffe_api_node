@@ -102,14 +102,14 @@ router.post("/login", async (req, res) => {
     });
 
     console.log('reuslts ,', results);
+    const user = results.find(item => item.email == email);
 
-    if (!results || results.length === 0) {
+    if (!user) {
       return res
         .status(401)
         .json({ message: "Incorrect username or password" });
     }
 
-    const user = results[0];
 
 
 
