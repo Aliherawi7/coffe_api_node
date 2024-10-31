@@ -34,7 +34,18 @@ router.post("/signup", async (req, res) => {
 
   try {
     const query = "SELECT email FROM user WHERE email=?";
-    const results = await connection.all(query, [email]); // No destructuring
+
+    // Use a custom Promise for connection.all
+    const results = await new Promise((resolve, reject) => {
+      connection.all(query, [email], (err, rows) => {
+        if (err) {
+          console.error(err);
+          return reject(err);
+        }
+        console.log('Rows:', rows);
+        resolve(rows); // Return rows directly here
+      });
+    });
 
     if (results.length > 0) {
       return res.status(400).json({ message: "Email already exists!" });
@@ -43,18 +54,25 @@ router.post("/signup", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const insertQuery =
       "INSERT INTO user (name, contactNumber, email, password, status, role) VALUES (?, ?, ?, ?, 'false', 'user')";
-    await connection.run(insertQuery, [
-      name,
-      contactNumber,
-      email,
-      hashedPassword, // Use hashed password here
-    ]);
+
+    // Custom Promise for connection.run
+    await new Promise((resolve, reject) => {
+      connection.run(insertQuery, [name, contactNumber, email, hashedPassword], (err) => {
+        if (err) {
+          console.error(err);
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+
     res.status(200).json({ message: "Successfully registered!" });
   } catch (err) {
     console.error("Error during signup:", err);
     res.status(500).json({ message: "Database query error", error: err });
   }
 });
+
 
 
 // Login route
