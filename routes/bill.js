@@ -171,7 +171,6 @@
 // module.exports = router;
 
 const express = require("express");
-const sqlite3 = require("sqlite3").verbose(); // Import sqlite3
 const router = express.Router();
 const ejs = require("ejs");
 const pdf = require("html-pdf");
@@ -181,22 +180,8 @@ const uuid = require("uuid");
 const auth = require("../services/authentication");
 
 // Create a new SQLite database in memory
-const db = new sqlite3.Database(":memory:");
+const db = require("../connection");
 
-// Initialize the database schema (run this on startup)
-db.serialize(() => {
-  db.run(`CREATE TABLE bill (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      uuid TEXT,
-      email TEXT,
-      contactNumber TEXT,
-      paymentMethod TEXT,
-      total REAL,
-      productDetails TEXT,
-      createdBy TEXT
-  )`);
-});
 
 // Route to generate PDF
 router.post("/generateReport", auth.authenticateToken, async (req, res) => {
