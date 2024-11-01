@@ -123,9 +123,9 @@ router.post("/login", async (req, res) => {
         .json({ message: "Incorrect username or password" });
     }
 
-    if (user.status === "false") {
-      return res.status(401).json({ message: "Wait for admin approval" });
-    }
+    // if (user.status === "false") {
+    //   return res.status(401).json({ message: "Wait for admin approval" });
+    // }
 
     const response = { email: user.email, role: user.role };
     console.log('keys: ', response, process.env.ACCESS_TOKEN_SECRET);
